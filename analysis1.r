@@ -1,7 +1,10 @@
 do_analyses <- function() {
   print(">>>>>>>> Doing analyses")
 
-## LINEAR CHAIN ##
+  #model formula
+  model_f <- bf(response ~ sex * condition + (1|participant_id))
+
+  ## LINEAR CHAIN ##
   if (do_pp_linear == TRUE) {
     
     ## WITHOUT PUBLICATION BIAS ##
@@ -31,9 +34,6 @@ do_analyses <- function() {
       #update prior in prior_string
       x <- paste("normal(", pp_u, ",", pp_sig, ")", sep = "")
       
-      #model formula
-      model_f <- bf(response ~ sex * condition + (1|participant_id))
-      
       prior_m <- c(
         prior(normal(0.5, 0.1), class = Intercept), 
         prior_string(x, class = "b", coef = "sex:condition"),
@@ -43,15 +43,25 @@ do_analyses <- function() {
         prior(normal(0.5,0.1), class = sigma)
       )
       
-      model <- brm(
-        formula = model_f,
-        data = this_data_set,
-        family = gaussian,
-        prior = prior_m,
-        sample_prior = T,
-        chains = 2,
-        cores = 2
-      )
+      if (! exists('model')){  # if the model has not been defined yet
+              model <- brm(
+                formula = model_f,
+                data = this_data_set,
+                family = gaussian,
+                prior = prior_m,
+                sample_prior = T,
+                chains = 2,
+                cores = 2,
+                backend = "cmdstanr", 
+                stan_model_args = list(stanc_options = list("O"))
+              )
+      } else {
+              model <- update(
+                model,
+                newdata = this_data_set,
+                prior = prior_m
+              )
+      }
       
       # save the results of the pp
       b_base_med <<- c(b_base_med, fixef(model)[,1][[1]])
@@ -114,9 +124,6 @@ do_analyses <- function() {
         #update prior in prior_string
         x <- paste("normal(", pp_u, ",", pp_sig, ")", sep = "")
         
-        #model formula
-        model_f <- bf(response ~ sex * condition + (1|participant_id))
-        
         prior_m <- c(
           prior(normal(0.5, 0.1), class = Intercept),
           prior_string(x, class = "b", coef = "sex:condition"),
@@ -126,15 +133,25 @@ do_analyses <- function() {
           prior(normal(0.5,0.1), class = sigma)
         )
         
-        model <- brm(
-          formula = model_f,
-          data = this_data_set,
-          family = gaussian,
-          prior = prior_m,
-          sample_prior = T,
-          chains = 2,
-          cores = 2
-        )
+      if (! exists('model')){  # if the model has not been defined yet
+              model <- brm(
+                formula = model_f,
+                data = this_data_set,
+                family = gaussian,
+                prior = prior_m,
+                sample_prior = T,
+                chains = 2,
+                cores = 2,
+                backend = "cmdstanr", 
+                stan_model_args = list(stanc_options = list("O"))
+              )
+      } else {
+              model <- update(
+                model,
+                newdata = this_data_set,
+                prior = prior_m
+              )
+      }
         
         # save the results of the pp
         b_base_med <<- c(b_base_med, fixef(model)[,1][[1]])
@@ -207,9 +224,6 @@ do_analyses <- function() {
           #update prior in prior_string
           x <- paste("normal(", pp_u, ",", pp_sig, ")", sep = "")
           
-          #model formula
-          model_f <- bf(response ~ sex * condition + (1|participant_id))
-          
           prior_m <- c(
             prior(normal(0.5, 0.1), class = Intercept),
             prior_string(x, class = "b", coef = "sex:condition"),
@@ -219,15 +233,25 @@ do_analyses <- function() {
             prior(normal(0.5,0.1), class = sigma)
           )
           
-          model <- brm(
-            formula = model_f,
-            data = this_data_set,
-            family = gaussian,
-            prior = prior_m,
-            sample_prior = T,
-            chains = 2,
-            cores = 2
-          )
+      if (! exists('model')){  # if the model has not been defined yet
+              model <- brm(
+                formula = model_f,
+                data = this_data_set,
+                family = gaussian,
+                prior = prior_m,
+                sample_prior = T,
+                chains = 2,
+                cores = 2,
+                backend = "cmdstanr", 
+                stan_model_args = list(stanc_options = list("O"))
+              )
+      } else {
+              model <- update(
+                model,
+                newdata = this_data_set,
+                prior = prior_m
+              )
+      }
           
           # save the results of the pp
           b_base_med <<- c(b_base_med, fixef(model)[,1][[1]])
@@ -346,9 +370,6 @@ do_analyses <- function() {
         # update prior in prior_string
         x <- paste("normal(", pp_u, ",", pp_sig, ")", sep = "")
         
-        # model formula
-        model_f <- bf(response ~ sex * condition + (1|participant_id))
-        
         prior_m <- c(
           prior(normal(0.5, 0.1), class = Intercept), 
           prior_string(x, class = "b", coef = "sex:condition"),
@@ -358,15 +379,25 @@ do_analyses <- function() {
           prior(normal(0.5,0.1), class = sigma)
         )
         
-        model <- brm(
-          formula = model_f,
-          data = this_data_set,
-          family = gaussian,
-          prior = prior_m,
-          sample_prior = T,
-          chains = 2,
-          cores = 2
-        )
+      if (! exists('model')){  # if the model has not been defined yet
+              model <- brm(
+                formula = model_f,
+                data = this_data_set,
+                family = gaussian,
+                prior = prior_m,
+                sample_prior = T,
+                chains = 2,
+                cores = 2,
+                backend = "cmdstanr", 
+                stan_model_args = list(stanc_options = list("O"))
+              )
+      } else {
+              model <- update(
+                model,
+                newdata = this_data_set,
+                prior = prior_m
+              )
+      }
         
         # save the results of the pp
         b_base_med <<- c(b_base_med, fixef(model)[,1][[1]])
@@ -474,9 +505,6 @@ do_analyses <- function() {
         # update prior in prior_string
         x <- paste("normal(", pp_u, ",", pp_sig, ")", sep = "")
         
-        # model formula
-        model_f <- bf(response ~ sex * condition + (1|participant_id))
-        
         prior_m <- c(
           prior(normal(0.5, 0.1), class = Intercept), 
           prior_string(x, class = "b", coef = "sex:condition"),
@@ -486,15 +514,25 @@ do_analyses <- function() {
           prior(normal(0.5,0.1), class = sigma)
         )
         
-        model <- brm(
-          formula = model_f,
-          data = this_data_set,
-          family = gaussian,
-          prior = prior_m,
-          sample_prior = T,
-          chains = 2,
-          cores = 2
-        )
+      if (! exists('model')){  # if the model has not been defined yet
+              model <- brm(
+                formula = model_f,
+                data = this_data_set,
+                family = gaussian,
+                prior = prior_m,
+                sample_prior = T,
+                chains = 2,
+                cores = 2,
+                backend = "cmdstanr", 
+                stan_model_args = list(stanc_options = list("O"))
+              )
+      } else {
+              model <- update(
+                model,
+                newdata = this_data_set,
+                prior = prior_m
+              )
+      }
         
         # save the results of the pp
         b_base_med <<- c(b_base_med, fixef(model)[,1][[1]])
@@ -609,9 +647,6 @@ do_analyses <- function() {
         # update prior in prior_string
         x <- paste("normal(", pp_u, ",", pp_sig, ")", sep = "")
         
-        # model formula
-        model_f <- bf(response ~ sex * condition + (1|participant_id))
-        
         prior_m <- c(
           prior(normal(0.5, 0.1), class = Intercept), 
           prior_string(x, class = "b", coef = "sex:condition"),
@@ -621,15 +656,25 @@ do_analyses <- function() {
           prior(normal(0.5,0.1), class = sigma)
         )
         
-        model <- brm(
-          formula = model_f,
-          data = this_data_set,
-          family = gaussian,
-          prior = prior_m,
-          sample_prior = T,
-          chains = 2,
-          cores = 2
-        )
+      if (! exists('model')){  # if the model has not been defined yet
+              model <- brm(
+                formula = model_f,
+                data = this_data_set,
+                family = gaussian,
+                prior = prior_m,
+                sample_prior = T,
+                chains = 2,
+                cores = 2,
+                backend = "cmdstanr", 
+                stan_model_args = list(stanc_options = list("O"))
+              )
+      } else {
+              model <- update(
+                model,
+                newdata = this_data_set,
+                prior = prior_m
+              )
+      }
         
         # save the results of the pp
         b_base_med <<- c(b_base_med, fixef(model)[,1][[1]])
@@ -682,8 +727,7 @@ do_analyses <- function() {
       } # end of pp_citation_asym
     } # end of pp_citation with pb
   } # end of do_pp_citation
-  
-} # end of do_analyses_1
+} # end of do_analyses
 
 kalman <- function(mean,sd){
   for (i in 1:length(mean)){
