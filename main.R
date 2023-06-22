@@ -1,3 +1,4 @@
+#!/usr/bin/env Rscript
 # imports
 library(pacman)
 pacman::p_load(tidyverse, brms, dplyr, boot, igraph)
@@ -47,8 +48,9 @@ citation_list <- graph_from_data_frame(d = citation_list, directed = T)
 # Warning! n_participants_per_experiment and n_people need to
 # be divisible by 4!
 n_repeats <- 2 # 4
-n_experiments_per_repeat <- 4 # 60
-n_participants_per_experiment_dist <- 60 # lambda for rpois() - should probably be changed
+n_experiments_per_repeat <- 60 # 60
+sample_n_participants_per_experiment <- T # if T, then draw a sample size from a poisson distribution, otherwise use the value of n_participants_per_experiment
+n_participants_per_experiment <- 40 # only used if sample_n_participants_per_experiment is F
 n_trials_per_participant <- 10 # 25
 n_people <- 100000
 
@@ -97,7 +99,6 @@ for (i in 1:length(b_bases)) {
   for (j in 1:length(b_sexs)) {
     for (k in 1:length(b_conds)) {
       for (l in 1:length(b_sex_conds)) {
-
         ### Set up values for the simulation
         # this function is in util.R
         # also save the values to the meta vectors
@@ -133,6 +134,19 @@ for (i in 1:length(b_bases)) {
           ### Create citation chain
           ###
           citation_chain <- create_citation_chain(citation_list)
+
+
+          ###
+          ### Draw sample size ###
+          ###
+          # If sample_n_participants_per_experiment is T, the
+          # sample size will be drawn from a poisson distribution.
+          # Otherwise, the value of n_participants_per_experiment
+          # is used.
+          if (sample_n_participants_per_experiment == T) {
+            n_participants_per_experiment <- rpois(1, lambda = 10) * 4 # multiply by 4 to make sure it's divisible by 4
+          }
+
 
           ###
           ### Create the datasets for each experiment ###
@@ -195,8 +209,8 @@ for (i in 1:length(b_bases)) {
 # save results
 meta_results <- compile_meta_results()
 
-saved <- paste("Results/saved_results_", number, ".csv", sep = "")
-write.csv(saved_results_final, "Results/saved_results.csv")
-write.csv(meta_results, "Results/meta_results.csv")
+# saved <- paste("Results_testing/saved_results_", number, ".csv", sep = "")
+write.csv(saved_results_final, "Results_testing/saved_results.csv")
+write.csv(meta_results, "Results_testing/meta_results.csv")
 
 tidy_workspace()

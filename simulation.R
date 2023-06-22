@@ -9,28 +9,6 @@ create_population <- function() {
   return(data.frame(id, sex, d_base, var_base))
 }
 
-
-#' Given an input integer, n, return closest integer divisble by the integer, x. If two integers are equally close, return the highest value. If n is already divisible by x, return n.
-#' Args:
-#'   n (integer): input integer
-#'   x (integer): divisor integer
-#' Returns:
-#'  closest integer divisible by x
-closest_int_divisible_by_x <- function(n, x) {
-  if (n %% x == 0) {
-    return(n)
-  } else {
-    n1 <- n - (n %% x)
-    n2 <- n1 + x
-    if (abs(n - n1) < abs(n - n2)) {
-      return(n1)
-    } else {
-      return(n2)
-    }
-  }
-}
-
-
 create_datasets <- function() {
   print(">>>>>>>> Creating data sets")
 
@@ -42,11 +20,6 @@ create_datasets <- function() {
   studyID <- vector()
 
   for (experiment in 1:n_experiments_per_repeat) {
-
-    # draw sample size from poisson distribution
-    n_participants_per_experiment <- rpois(1, lambda = n_participants_per_experiment_dist)
-    # ensure that n_participants_per_experiment is divisble by 4, which is necessary to ensure equal number of each sex and true mean and true variance of each subpopulation is the same
-    n_participants_per_experiment <- closest_int_divisible_by_x(n_participants_per_experiment, 4)
 
     # add to the data_set, participant_id and sex columns
     data_set <- c(data_set, rep(experiment, n_participants_per_experiment))
