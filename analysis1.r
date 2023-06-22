@@ -77,11 +77,55 @@ do_analyses_1 <- function() {
       b_sex_p_value <<- c(b_sex_p_value, NaN)
       b_cond_p_value <<- c(b_cond_p_value, NaN)
       b_sex_cond_p_value <<- c(b_sex_cond_p_value, NaN)
+
+      tmp_results_df <- dplyr::tibble(
+        b_base_med = fixef(model)[,1][[1]],
+        b_sex_med = fixef(model)[,1][[2]],
+        b_cond_med = fixef(model)[,1][[3]],
+        b_sex_cond_med = fixef(model)[,1][[4]],
+        
+        b_base_lower = fixef(model)[,3][[1]],
+        b_sex_lower = fixef(model)[,3][[2]],
+        b_cond_lower = fixef(model)[,3][[3]],
+        b_sex_cond_lower = fixef(model)[,3][[4]],
+        
+        b_base_upper = fixef(model)[,4][[1]],
+        b_sex_upper = fixef(model)[,4][[2]],
+        b_cond_upper = fixef(model)[,4][[3]],
+        b_sex_cond_upper = fixef(model)[,4][[4]],
+        
+        b_base_error = fixef(model)[,2][[1]],
+        b_sex_error = fixef(model)[,2][[2]],
+        b_cond_error = fixef(model)[,2][[3]],
+        b_sex_cond_error = fixef(model)[,2][[4]],
+
+        expt = experiment
+      )
+
+      if (exists("results_df")) {
+        results_df <- rbind(results_df, tmp_results_df)
+      } else {
+        results_df <- tmp_results_df
+      }
       
       # update the priors for the next run
       pp_u <- fixef(model)[,1][[4]]
       pp_sig <- fixef(model)[,2][[4]] 
       pub_true <<- c(pub_true, 1)
+
+      # running meta analysis
+      tmp_meta_df <- running_meta_analysis(
+        meta_data = results_df,
+        repeat_id = unique(repeat_id),
+        true_effect = NaN, # change this to the true effect!
+        pb_true = 0
+      )
+
+      if (exists("running_meta_df")) {
+        running_meta_df <- rbind(running_meta_df, tmp_meta_df)
+      } else {
+        running_meta_df <- tmp_meta_df
+      }
       
       } # end of for each experiment loop
      # end of pp_linear without pb
@@ -703,5 +747,40 @@ kalman <- function(mean,sd){
     mean = k_mean,
     sd = k_sd
   ))
+}
+
+running_meta_analysis <- function(meta_data, repeat_id, true_effect, pb_true) {
+  # meta analysis without pb
+  meta_f <- bf(b_sex_cond_med | se(b_sex_cond_error) ~ 1 + (1 | expt))
+  
+  prior_meta <- c(
+    prior(normal(0,0.1), class = Intercept),
+    prior(normal(0,0.1), class = sd)
+  )
+  
+  model <- brm(
+    formula = meta_f,
+    data = meta_data,
+    family = gaussian,
+    prior = prior_meta,
+    sample_prior = T,
+    chains = 2,
+    cores =2
+  )
+  
+  #save results
+  meta_df <- tibble(
+    b_sex_cond_meta = fixef(model)[,1][[1]],
+    b_sex_cond_error_meta = fixef(model)[,2][[1]],
+    b_sex_cond_lower_meta = fixef(model)[,3][[1]],
+    b_sex_cond_upper_meta = fixef(model)[,4][[1]],
+    repeat_id = repeat_id,
+    n_exp = nrow(meta_data),
+    true_effect = true_effect,
+    pb_true = pb_true
+  )
+    
+  #save all results
+  return(meta_df)
 }
 
