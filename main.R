@@ -57,8 +57,8 @@ current_simulation <- 1
 
 ### Analysis parameters
 # These allow you to choose which analyses do you want
-do_pp_linear <- T
-do_pp_citation <- T
+do_pp_linear <- TRUE
+do_pp_citation <- FALSE
 
 ### Publication bias
 # This allows you to choose whether or not the analysis 
@@ -68,7 +68,7 @@ do_pp_citation <- T
 # of effect and whether or not CIs include 0. This also allows
 # you do decide whether you want the publication bias to be 
 # symmetric or asymmetric. 
-do_publication_bias <- T
+do_publication_bias <- TRUE
 
 pb_prob_pos <- 0.9 #prob if b above zero and b lower above zero
 pb_prob_null <- 0.2 #prob if b above zero and b lower below zero OR b below zero and b upper above zero
@@ -87,6 +87,14 @@ pp_final_expt_only <- T
 # the meta_results table is filled in with a single row that gives data
 # on the results across those simulations.
 prepare_meta_vectors()
+n_repeats <- 1
+n_experiments_per_repeat <- 2
+n_participants_per_experiment <- 40
+n_trials_per_participant <- 10
+n_people <- 100000
+
+# overwrite values for fewer simulations
+b_sex_conds <- c((-2))
 
 ###                        ###
 ### SIMULATIONS START HERE ###
@@ -153,7 +161,20 @@ for (i in 1:length(b_bases)) {
                 # Now that we have all the data_sets we perform the desired analyses over them.
                 # It is in these methods that we start to create the results table. Each entry
                 # in this table corresponds to a single analysis on a single data_set.
-                do_analyses_1()
+                tmp_df <- do_analyses(data_sets, do_pp_linear, do_pp_citation, do_publication_bias) %>%
+                    mutate(
+                      repeat_id = rep,
+                      true_base = b_bases[i],
+                      true_sex = b_sexs[j],
+                      true_cond = b_conds[k],
+                      true_sex_cond = b_sex_conds[l]
+                    )
+                
+                if (exists("analyses_df")) {
+                  analyses_df <- rbind(analyses_df, tmp_df)
+                } else {
+                  analyses_df <- tmp_df
+                }
                 
                 ###
                 ### Remove DLLs #
@@ -177,20 +198,21 @@ for (i in 1:length(b_bases)) {
               # this function is in util.R
               # now we have all our results so we parse them as a single table and collapse
               # each repeat simulation (i.e. each run of experiments) into a single entry
-              save_results_meta()
+              # save_results_meta()
               
-              ###
-              ### Save results for each value of b_sex_conds
-              ###
-              if(exists("saved_results_final")){
-                saved_results_final <- rbind(saved_results, saved_results_final)
-                print("YES")
-              } else {
-                saved_results_final <- saved_results
-              }
-              }
+              # ###
+              # ### Save results for each value of b_sex_conds
+              # ###
+              # if(exists("saved_results_final")){
+              #   saved_results_final <- rbind(saved_results, saved_results_final)
+              #   print("YES")
+              # } else {
+              #   saved_results_final <- saved_results
+              # }
+              # }
             }
           }
+  }
 } # end of parameter value for loops
 
 #save results
