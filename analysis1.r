@@ -107,9 +107,9 @@ do_analyses <- function(
       pp_sig <- fixef(model)[, 2][[4]]
 
       # running meta analysis
-      tmp_meta_df <- running_meta_analysis(
-        meta_data = results_df %>% filter(analysis_type == current_analysis_type)
-      )
+      meta_data <- results_df %>% 
+        filter(analysis_type == current_analysis_type & pub_true == 1)
+      tmp_meta_df <- running_meta_analysis(meta_data)
 
       meta_df <- rbind(meta_df, tmp_meta_df)
     } # end of for each experiment loop
@@ -207,9 +207,9 @@ do_analyses <- function(
         results_df <- rbind(results_df, tmp_results_df)
 
         # running meta analysis
-        tmp_meta_df <- running_meta_analysis(
-          meta_data = results_df %>% filter(analysis_type == current_analysis_type)
-        )
+        meta_data <- results_df %>% 
+          filter(analysis_type == current_analysis_type & pub_true == 1)
+        tmp_meta_df <- running_meta_analysis(meta_data)
 
         meta_df <- rbind(meta_df, tmp_meta_df)
       } # end of p_linear_sym
@@ -310,9 +310,9 @@ do_analyses <- function(
         results_df <- rbind(results_df, tmp_results_df)
 
         # running meta analysis
-        tmp_meta_df <- running_meta_analysis(
-          meta_data = results_df %>% filter(analysis_type == current_analysis_type)
-        )
+        meta_data <- results_df %>%
+          filter(analysis_type == current_analysis_type & pub_true == 1)
+        tmp_meta_df <- running_meta_analysis(meta_data)
 
         meta_df <- rbind(meta_df, tmp_meta_df)
       } # end of pp_linear_asym
