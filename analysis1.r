@@ -107,7 +107,7 @@ do_analyses <- function(
       pp_sig <- fixef(model)[, 2][[4]]
 
       # running meta analysis
-      meta_data <- results_df %>% 
+      meta_data <- results_df %>%
         filter(analysis_type == current_analysis_type & pub_true == 1)
       tmp_meta_df <- running_meta_analysis(meta_data)
 
@@ -207,7 +207,7 @@ do_analyses <- function(
         results_df <- rbind(results_df, tmp_results_df)
 
         # running meta analysis
-        meta_data <- results_df %>% 
+        meta_data <- results_df %>%
           filter(analysis_type == current_analysis_type & pub_true == 1)
         tmp_meta_df <- running_meta_analysis(meta_data)
 
