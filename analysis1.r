@@ -109,21 +109,15 @@ do_analyses <- function(
         )
 
         # update the priors for the next run
-        if (
-          tmp_results_df$b_sex_cond_med > 0 &&
-            tmp_results_df$b_sex_cond_lower > 0
-        ) {
-          pb_prob <- pb_prob_pos
-        } else if (
-          tmp_results_df$b_sex_cond_med < 0 &&
-            tmp_results_df$b_sex_cond_upper < 0
-        ) {
-          pb_prob <- pb_prob_pos
-        } else {
-          pb_prob <- pb_prob_null
-        }
+        pb <- publication_true(
+          med = tmp_results_df$b_sex_cond_med,
+          lower = tmp_results_df$b_sex_cond_lower,
+          upper = tmp_results_df$b_sex_cond_lower,
+          pb_prob_pos = pb_prob_pos,
+          pb_prob_pos = pb_prob_pos,
+          pb_prob_null = pb_prob_null
+        )
 
-        pb <- rbinom(1, size = 1, prob = pb_prob)
         pp_u <- ifelse(pb == 1,
           tmp_results_df$b_sex_cond_med,
           pp_u[1]
@@ -173,21 +167,15 @@ do_analyses <- function(
         )
 
         # update the priors for the next run
-        if (
-          tmp_results_df$b_sex_cond_med > 0 &&
-            tmp_results_df$b_sex_cond_lower > 0
-        ) {
-          pb_prob <- pb_prob_pos
-        } else if (
-          tmp_results_df$b_sex_cond_med < 0 &&
-            tmp_results_df$b_sex_cond_upper < 0
-        ) {
-          pb_prob <- pb_prob_neg
-        } else {
-          pb_prob <- pb_prob_null
-        }
+        pb <- publication_true(
+          med = tmp_results_df$b_sex_cond_med,
+          lower = tmp_results_df$b_sex_cond_lower,
+          upper = tmp_results_df$b_sex_cond_lower,
+          pb_prob_pos = pb_prob_pos,
+          pb_prob_pos = pb_prob_neg,
+          pb_prob_null = pb_prob_null
+        )
 
-        pb <- rbinom(1, size = 1, prob = pb_prob)
         pp_u <- ifelse(pb == 1,
           tmp_results_df$b_sex_cond_med,
           pp_u[1]
@@ -382,21 +370,14 @@ do_analyses <- function(
         )
 
         # publication
-        if (
-          tmp_results_df$b_sex_cond_med > 0 &&
-            tmp_results_df$b_sex_cond_lower > 0
-        ) {
-          pb_prob <- pb_prob_pos
-        } else if (
-          tmp_results_df$b_sex_cond_med < 0 &&
-            tmp_results_df$b_sex_cond_upper < 0
-        ) {
-          pb_prob <- pb_prob_pos
-        } else {
-          pb_prob <- pb_prob_null
-        }
-
-        pb <- rbinom(1, size = 1, prob = pb_prob)
+        pb <- publication_true(
+          med = tmp_results_df$b_sex_cond_med,
+          lower = tmp_results_df$b_sex_cond_lower,
+          upper = tmp_results_df$b_sex_cond_lower,
+          pb_prob_pos = pb_prob_pos,
+          pb_prob_pos = pb_prob_pos,
+          pb_prob_null = pb_prob_null
+        )
 
         # if published
         if (pb == 1) {
@@ -494,21 +475,14 @@ do_analyses <- function(
         )
 
         # publication
-        if (
-          tmp_results_df$b_sex_cond_med > 0 &&
-            tmp_results_df$b_sex_cond_lower > 0
-        ) {
-          pb_prob <- pb_prob_pos
-        } else if (
-          tmp_results_df$b_sex_cond_med < 0 &&
-            tmp_results_df$b_sex_cond_upper < 0
-        ) {
-          pb_prob <- pb_prob_neg
-        } else {
-          pb_prob <- pb_prob_null
-        }
-
-        pb <- rbinom(1, size = 1, prob = pb_prob)
+        pb <- publication_true(
+          med = tmp_results_df$b_sex_cond_med,
+          lower = tmp_results_df$b_sex_cond_lower,
+          upper = tmp_results_df$b_sex_cond_lower,
+          pb_prob_pos = pb_prob_pos,
+          pb_prob_pos = pb_prob_neg,
+          pb_prob_null = pb_prob_null
+        )
 
         # if published
         if (pb == 1) {
@@ -654,4 +628,24 @@ kalman <- function(mean, sd) {
     mean = k_mean,
     sd = k_sd
   ))
+}
+
+publication_true <- function(
+  med,
+  lower,
+  upper,
+  pb_prob_pos,
+  pb_prob_neg,
+  pb_prob_null
+  ) {
+
+  if (med > 0 && lower > 0) {
+    pb_prob <- pb_prob_pos
+  } else if (med < 0 && upper < 0) {
+    pb_prob <- pb_prob_neg
+  } else {
+    pb_prob <- pb_prob_null
+  }
+
+  return(rbinom(1, size = 1, prob = pb_prob))
 }
