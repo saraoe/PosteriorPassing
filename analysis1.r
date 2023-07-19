@@ -631,14 +631,12 @@ kalman <- function(mean, sd) {
 }
 
 publication_true <- function(
-  med,
-  lower,
-  upper,
-  pb_prob_pos,
-  pb_prob_neg,
-  pb_prob_null
-  ) {
-
+    med,
+    lower,
+    upper,
+    pb_prob_pos,
+    pb_prob_neg,
+    pb_prob_null) {
   if (med > 0 && lower > 0) {
     pb_prob <- pb_prob_pos
   } else if (med < 0 && upper < 0) {
