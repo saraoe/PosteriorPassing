@@ -2,7 +2,10 @@ do_analyses <- function(
     data_sets,
     do_pp_linear,
     do_pp_citation,
-    do_publication_bias) {
+    do_publication_bias,
+    pb_prob_pos,
+    pb_prob_neg,
+    pb_prob_null) {
   print(">>>>>>>> Doing analyses")
 
   n_experiments_per_repeat <- max(data_sets$data_set)
@@ -45,70 +48,34 @@ do_analyses <- function(
     current_analysis_type <- "pp_linear"
     current_pub_method <- NA
 
-    # set initial prior for beta[4]
+    # set initial prior for b_sex_cond
     pp_u <- 0
     pp_sig <- 0.1
 
     for (experiment in seq_len(n_experiments_per_repeat)) {
       print(paste(">>>> Model", experiment, "for linear_no_pb")) # , in repeat", rep, "with true effect", b_sex_cond, sep = " "))
-      # for every experiment get the relevant data set
-      this_data_set <- data_sets[data_sets$data_set == experiment, ]
 
-      # update prior in prior_string
-      x <- paste("normal(", pp_u, ",", pp_sig, ")", sep = "")
-
-      # model formula
-      model_f <- bf(response ~ sex * condition + (1 | participant_id))
-
-      prior_m <- c(
-        prior(normal(0.5, 0.1), class = Intercept),
-        prior_string(x, class = "b", coef = "sex:condition"),
-        prior(normal(0, 0.1), class = b, coef = "sex"),
-        prior(normal(0, 0.1), class = b, coef = "condition"),
-        prior(normal(0, 0.1), class = sd),
-        prior(normal(0.5, 0.1), class = sigma)
-      )
-
-      model <- brm(
-        formula = model_f,
-        data = this_data_set,
-        family = gaussian,
-        prior = prior_m,
-        sample_prior = T,
-        chains = 2,
-        cores = 2
+      tmp_results_df <- run_model(
+        data_set = data_sets[data_sets$data_set == experiment, ],
+        pp_u = pp_u,
+        pp_sig = pp_sig
       )
 
       # save the results of the pp
-      tmp_results_df <- dplyr::tibble(
-        expt = experiment,
-        analysis_type = current_analysis_type,
-        pub_method = current_pub_method,
-        pub_true = 1,
-        posteriors_included = ifelse(experiment == 1, 0, 1),
-        b_base_med = fixef(model)[, 1][[1]],
-        b_sex_med = fixef(model)[, 1][[2]],
-        b_cond_med = fixef(model)[, 1][[3]],
-        b_sex_cond_med = fixef(model)[, 1][[4]],
-        b_base_lower = fixef(model)[, 3][[1]],
-        b_sex_lower = fixef(model)[, 3][[2]],
-        b_cond_lower = fixef(model)[, 3][[3]],
-        b_sex_cond_lower = fixef(model)[, 3][[4]],
-        b_base_upper = fixef(model)[, 4][[1]],
-        b_sex_upper = fixef(model)[, 4][[2]],
-        b_cond_upper = fixef(model)[, 4][[3]],
-        b_sex_cond_upper = fixef(model)[, 4][[4]],
-        b_base_error = fixef(model)[, 2][[1]],
-        b_sex_error = fixef(model)[, 2][[2]],
-        b_cond_error = fixef(model)[, 2][[3]],
-        b_sex_cond_error = fixef(model)[, 2][[4]]
-      )
+      tmp_results_df <- tmp_results_df %>%
+        mutate(
+          expt = experiment,
+          analysis_type = current_analysis_type,
+          pub_method = current_pub_method,
+          pub_true = 1,
+          posteriors_included = ifelse(experiment == 1, 0, 1),
+        )
 
       results_df <- rbind(results_df, tmp_results_df)
 
       # update the priors for the next run
-      pp_u <- fixef(model)[, 1][[4]]
-      pp_sig <- fixef(model)[, 2][[4]]
+      pp_u <- tmp_results_df$b_sex_cond_med
+      pp_sig <- tmp_results_df$b_sex_cond_error
 
       # running meta analysis
       meta_data <- results_df %>%
@@ -128,85 +95,53 @@ do_analyses <- function(
       current_analysis_type <- "pp_linear_pb_sym"
       current_pub_method <- "sym"
 
-      # set initial prior for beta[4]
+      # set initial prior for b_sex_cond
       pp_u <- 0
       pp_sig <- 0.1
 
       for (experiment in seq_len(n_experiments_per_repeat)) {
         print(paste(">>>> Model", experiment, "for linear_sym")) # , in repeat", rep, "with true effect", b_sex_cond, sep = " "))
-        # for every experiment get the relevant data set
-        this_data_set <- data_sets[data_sets$data_set == experiment, ]
 
-        ifelse((pp_u == 0 && pp_sig == 0.1), 0, 1)
-
-        # update prior in prior_string
-        x <- paste("normal(", pp_u, ",", pp_sig, ")", sep = "")
-
-        # model formula
-        model_f <- bf(response ~ sex * condition + (1 | participant_id))
-
-        prior_m <- c(
-          prior(normal(0.5, 0.1), class = Intercept),
-          prior_string(x, class = "b", coef = "sex:condition"),
-          prior(normal(0, 0.1), class = b, coef = "sex"),
-          prior(normal(0, 0.1), class = b, coef = "condition"),
-          prior(normal(0, 0.1), class = sd),
-          prior(normal(0.5, 0.1), class = sigma)
-        )
-
-        model <- brm(
-          formula = model_f,
-          data = this_data_set,
-          family = gaussian,
-          prior = prior_m,
-          sample_prior = T,
-          chains = 2,
-          cores = 2
+        tmp_results_df <- run_model(
+          data_set = data_sets[data_sets$data_set == experiment, ],
+          pp_u = pp_u,
+          pp_sig = pp_sig
         )
 
         # update the priors for the next run
-        if (fixef(model)[, 1][[4]] > 0 && fixef(model)[, 3][[4]] > 0) {
+        if (
+          tmp_results_df$b_sex_cond_med > 0 &&
+            tmp_results_df$b_sex_cond_lower > 0
+        ) {
           pb_prob <- pb_prob_pos
-        } else if (fixef(model)[, 1][[4]] < 0 && fixef(model)[, 4][[4]] < 0) {
+        } else if (
+          tmp_results_df$b_sex_cond_med < 0 &&
+            tmp_results_df$b_sex_cond_upper < 0
+        ) {
           pb_prob <- pb_prob_pos
-        } else { # if ((fixef(model)[,1][[4]] >= 0 & fixef(model)[,3][[4]] <= 0) | (fixef(model)[,1][[4]] <= 0 & fixef(model)[,4][[4]] >= 0))
+        } else {
           pb_prob <- pb_prob_null
         }
 
         pb <- rbinom(1, size = 1, prob = pb_prob)
         pp_u <- ifelse(pb == 1,
-          fixef(model)[, 1][[4]],
+          tmp_results_df$b_sex_cond_med,
           pp_u[1]
         )
         pp_sig <- ifelse(pb == 1,
-          fixef(model)[, 2][[4]],
+          tmp_results_df$b_sex_cond_error,
           pp_sig[1]
         )
 
         # save the results of the pp
-        tmp_results_df <- dplyr::tibble(
-          expt = experiment,
-          analysis_type = current_analysis_type,
-          pub_method = current_pub_method,
-          pub_true = ifelse(pb == 0, 0, 1),
-          posteriors_included = ifelse((pp_u == 0 && pp_sig == 0.1), 0, 1),
-          b_base_med = fixef(model)[, 1][[1]],
-          b_sex_med = fixef(model)[, 1][[2]],
-          b_cond_med = fixef(model)[, 1][[3]],
-          b_sex_cond_med = fixef(model)[, 1][[4]],
-          b_base_lower = fixef(model)[, 3][[1]],
-          b_sex_lower = fixef(model)[, 3][[2]],
-          b_cond_lower = fixef(model)[, 3][[3]],
-          b_sex_cond_lower = fixef(model)[, 3][[4]],
-          b_base_upper = fixef(model)[, 4][[1]],
-          b_sex_upper = fixef(model)[, 4][[2]],
-          b_cond_upper = fixef(model)[, 4][[3]],
-          b_sex_cond_upper = fixef(model)[, 4][[4]],
-          b_base_error = fixef(model)[, 2][[1]],
-          b_sex_error = fixef(model)[, 2][[2]],
-          b_cond_error = fixef(model)[, 2][[3]],
-          b_sex_cond_error = fixef(model)[, 2][[4]]
-        )
+        tmp_results_df <- tmp_results_df %>%
+          mutate(
+            expt = experiment,
+            analysis_type = current_analysis_type,
+            pub_method = current_pub_method,
+            pub_true = ifelse(pb == 0, 0, 1),
+            posteriors_included = ifelse((pp_u == 0 && pp_sig == 0.1), 0, 1)
+          )
 
         results_df <- rbind(results_df, tmp_results_df)
 
@@ -224,92 +159,53 @@ do_analyses <- function(
       current_analysis_type <- "pp_linear_pb_asym"
       current_pub_method <- "asym"
 
-      # set initial prior for beta[4]
+      # set initial prior for b_sex_cond
       pp_u <- 0
       pp_sig <- 0.1
 
       for (experiment in seq_len(n_experiments_per_repeat)) {
         print(paste(">>>> Model", experiment, "for linear_asym")) # , in repeat", rep, "with true effect", b_sex_cond, sep = " "))
-        # for every experiment get the relevant data set
-        this_data_set <- data_sets[data_sets$data_set == experiment, ]
 
-        # adding a meassure for number of posteriors included
-        if (pp_u == 0 & pp_sig == 0.1) {
-          pp_n <<- c(pp_n, 0)
-        } else {
-          pp_n <<- c(pp_n, 1)
-        }
-
-        # update prior in prior_string
-        x <- paste("normal(", pp_u, ",", pp_sig, ")", sep = "")
-
-        # model formula
-        model_f <- bf(response ~ sex * condition + (1 | participant_id))
-
-        prior_m <- c(
-          prior(normal(0.5, 0.1), class = Intercept),
-          prior_string(x, class = "b", coef = "sex:condition"),
-          prior(normal(0, 0.1), class = b, coef = "sex"),
-          prior(normal(0, 0.1), class = b, coef = "condition"),
-          prior(normal(0, 0.1), class = sd),
-          prior(normal(0.5, 0.1), class = sigma)
-        )
-
-        model <- brm(
-          formula = model_f,
-          data = this_data_set,
-          family = gaussian,
-          prior = prior_m,
-          sample_prior = T,
-          chains = 2,
-          cores = 2
+        tmp_results_df <- run_model(
+          data_set = data_sets[data_sets$data_set == experiment, ],
+          pp_u = pp_u,
+          pp_sig = pp_sig
         )
 
         # update the priors for the next run
-
-        if (fixef(model)[, 1][[4]] > 0 & fixef(model)[, 3][[4]] > 0) {
+        if (
+          tmp_results_df$b_sex_cond_med > 0 &&
+            tmp_results_df$b_sex_cond_lower > 0
+        ) {
           pb_prob <- pb_prob_pos
-        } else if (fixef(model)[, 1][[4]] < 0 & fixef(model)[, 4][[4]] < 0) {
+        } else if (
+          tmp_results_df$b_sex_cond_med < 0 &&
+            tmp_results_df$b_sex_cond_upper < 0
+        ) {
           pb_prob <- pb_prob_neg
-        } else { # if ((fixef(model)[,1][[4]] >= 0 & fixef(model)[,3][[4]] <= 0) | (fixef(model)[,1][[4]] <= 0 & fixef(model)[,4][[4]] >= 0))
+        } else {
           pb_prob <- pb_prob_null
         }
 
         pb <- rbinom(1, size = 1, prob = pb_prob)
         pp_u <- ifelse(pb == 1,
-          fixef(model)[, 1][[4]],
+          tmp_results_df$b_sex_cond_med,
           pp_u[1]
         )
         pp_sig <- ifelse(pb == 1,
-          fixef(model)[, 2][[4]],
+          tmp_results_df$b_sex_cond_error,
           pp_sig[1]
         )
-        pub_true <<- c(pub_true, ifelse(pb == 0, 0, 1))
 
         # save the results of the pp
-        tmp_results_df <- dplyr::tibble(
-          expt = experiment,
-          analysis_type = current_analysis_type,
-          pub_method = current_pub_method,
-          pub_true = ifelse(pb == 0, 0, 1),
-          posteriors_included = ifelse((pp_u == 0 && pp_sig == 0.1), 0, 1),
-          b_base_med = fixef(model)[, 1][[1]],
-          b_sex_med = fixef(model)[, 1][[2]],
-          b_cond_med = fixef(model)[, 1][[3]],
-          b_sex_cond_med = fixef(model)[, 1][[4]],
-          b_base_lower = fixef(model)[, 3][[1]],
-          b_sex_lower = fixef(model)[, 3][[2]],
-          b_cond_lower = fixef(model)[, 3][[3]],
-          b_sex_cond_lower = fixef(model)[, 3][[4]],
-          b_base_upper = fixef(model)[, 4][[1]],
-          b_sex_upper = fixef(model)[, 4][[2]],
-          b_cond_upper = fixef(model)[, 4][[3]],
-          b_sex_cond_upper = fixef(model)[, 4][[4]],
-          b_base_error = fixef(model)[, 2][[1]],
-          b_sex_error = fixef(model)[, 2][[2]],
-          b_cond_error = fixef(model)[, 2][[3]],
-          b_sex_cond_error = fixef(model)[, 2][[4]]
-        )
+        tmp_results_df <- tmp_results_df %>%
+          mutate(
+            expt = experiment,
+            analysis_type = current_analysis_type,
+            pub_method = current_pub_method,
+            pub_true = ifelse(pb == 0, 0, 1),
+            posteriors_included = ifelse((pp_u == 0 && pp_sig == 0.1), 0, 1)
+          )
 
         results_df <- rbind(results_df, tmp_results_df)
 
@@ -345,7 +241,7 @@ do_analyses <- function(
       this_chain_df <- as.data.frame(matrix(0, nrow = 1, ncol = 3))
       colnames(this_chain_df) <- colnames(chain_df)
 
-      # set initial prior for beta[4] and update afterwards (if not first round, update pp_u and pp_sig)
+      # set initial prior for b_sex_cond and update afterwards (if not first round, update pp_u and pp_sig)
       if (nrow(chain_df) == 0) {
         pp_u <- 0
         pp_sig <- 0.1
@@ -384,62 +280,28 @@ do_analyses <- function(
         }
       }
 
-      # update prior in prior_string
-      x <- paste("normal(", pp_u, ",", pp_sig, ")", sep = "")
-
-      # model formula
-      model_f <- bf(response ~ sex * condition + (1 | participant_id))
-
-      prior_m <- c(
-        prior(normal(0.5, 0.1), class = Intercept),
-        prior_string(x, class = "b", coef = "sex:condition"),
-        prior(normal(0, 0.1), class = b, coef = "sex"),
-        prior(normal(0, 0.1), class = b, coef = "condition"),
-        prior(normal(0, 0.1), class = sd),
-        prior(normal(0.5, 0.1), class = sigma)
-      )
-
-      model <- brm(
-        formula = model_f,
-        data = this_data_set,
-        family = gaussian,
-        prior = prior_m,
-        sample_prior = T,
-        chains = 2,
-        cores = 2
+      tmp_results_df <- run_model(
+        data_set = this_data_set,
+        pp_u = pp_u,
+        pp_sig = pp_sig
       )
 
       # new dataframe with saved PP values
-      this_chain_df$pp_u <- fixef(model)[, 1][[4]]
-      this_chain_df$pp_sig <- fixef(model)[, 2][[4]]
+      this_chain_df$pp_u <- tmp_results_df$b_sex_cond_med
+      this_chain_df$pp_sig <- tmp_results_df$b_sex_cond_error
       this_chain_df$studyID <- this_data_set$studyID[1]
 
       chain_df <- rbind(chain_df, this_chain_df)
 
       # save the results of the pp
-      tmp_results_df <- dplyr::tibble(
-        expt = experiment,
-        analysis_type = current_analysis_type,
-        pub_method = current_pub_method,
-        pub_true = 1,
-        posteriors_included = pp_n,
-        b_base_med = fixef(model)[, 1][[1]],
-        b_sex_med = fixef(model)[, 1][[2]],
-        b_cond_med = fixef(model)[, 1][[3]],
-        b_sex_cond_med = fixef(model)[, 1][[4]],
-        b_base_lower = fixef(model)[, 3][[1]],
-        b_sex_lower = fixef(model)[, 3][[2]],
-        b_cond_lower = fixef(model)[, 3][[3]],
-        b_sex_cond_lower = fixef(model)[, 3][[4]],
-        b_base_upper = fixef(model)[, 4][[1]],
-        b_sex_upper = fixef(model)[, 4][[2]],
-        b_cond_upper = fixef(model)[, 4][[3]],
-        b_sex_cond_upper = fixef(model)[, 4][[4]],
-        b_base_error = fixef(model)[, 2][[1]],
-        b_sex_error = fixef(model)[, 2][[2]],
-        b_cond_error = fixef(model)[, 2][[3]],
-        b_sex_cond_error = fixef(model)[, 2][[4]]
-      )
+      tmp_results_df <- tmp_results_df %>%
+        mutate(
+          expt = experiment,
+          analysis_type = current_analysis_type,
+          pub_method = current_pub_method,
+          pub_true = 1,
+          posteriors_included = pp_n
+        )
 
       results_df <- rbind(results_df, tmp_results_df)
 
@@ -474,7 +336,7 @@ do_analyses <- function(
         this_chain_df <- as.data.frame(matrix(0, nrow = 1, ncol = 3))
         colnames(this_chain_df) <- colnames(chain_df)
 
-        # set initial prior for beta[4] and update afterwards (if not first round, update pp_u and pp_sig)
+        # set initial prior for b_sex_cond and update afterwards (if not first round, update pp_u and pp_sig)
         if (nrow(chain_df) == 0) {
           pp_u <- 0
           pp_sig <- 0.1
@@ -513,37 +375,24 @@ do_analyses <- function(
           }
         }
 
-        # update prior in prior_string
-        x <- paste("normal(", pp_u, ",", pp_sig, ")", sep = "")
-
-        # model formula
-        model_f <- bf(response ~ sex * condition + (1 | participant_id))
-
-        prior_m <- c(
-          prior(normal(0.5, 0.1), class = Intercept),
-          prior_string(x, class = "b", coef = "sex:condition"),
-          prior(normal(0, 0.1), class = b, coef = "sex"),
-          prior(normal(0, 0.1), class = b, coef = "condition"),
-          prior(normal(0, 0.1), class = sd),
-          prior(normal(0.5, 0.1), class = sigma)
-        )
-
-        model <- brm(
-          formula = model_f,
-          data = this_data_set,
-          family = gaussian,
-          prior = prior_m,
-          sample_prior = T,
-          chains = 2,
-          cores = 2
+        tmp_results_df <- run_model(
+          data_set = this_data_set,
+          pp_u = pp_u,
+          pp_sig = pp_sig
         )
 
         # publication
-        if (fixef(model)[, 1][[4]] > 0 & fixef(model)[, 3][[4]] > 0) {
+        if (
+          tmp_results_df$b_sex_cond_med > 0 &&
+            tmp_results_df$b_sex_cond_lower > 0
+        ) {
           pb_prob <- pb_prob_pos
-        } else if (fixef(model)[, 1][[4]] < 0 & fixef(model)[, 4][[4]] < 0) {
+        } else if (
+          tmp_results_df$b_sex_cond_med < 0 &&
+            tmp_results_df$b_sex_cond_upper < 0
+        ) {
           pb_prob <- pb_prob_pos
-        } else { # if ((fixef(model)[,1][[4]] >= 0 & fixef(model)[,3][[4]] <= 0) | (fixef(model)[,1][[4]] <= 0 & fixef(model)[,4][[4]] >= 0))
+        } else {
           pb_prob <- pb_prob_null
         }
 
@@ -552,8 +401,8 @@ do_analyses <- function(
         # if published
         if (pb == 1) {
           # new dataframe with saved PP values
-          this_chain_df$pp_u <- fixef(model)[, 1][[4]]
-          this_chain_df$pp_sig <- fixef(model)[, 2][[4]]
+          this_chain_df$pp_u <- tmp_results_df$b_sex_cond_med
+          this_chain_df$pp_sig <- tmp_results_df$b_sex_cond_error
           this_chain_df$studyID <- this_data_set$studyID[1]
 
           # binding into df with all PP values
@@ -561,29 +410,14 @@ do_analyses <- function(
         }
 
         # save the results of the pp
-        tmp_results_df <- dplyr::tibble(
-          expt = experiment,
-          analysis_type = current_analysis_type,
-          pub_method = current_pub_method,
-          pub_true = ifelse(pb == 0, 0, 1),
-          posteriors_included = pp_n,
-          b_base_med = fixef(model)[, 1][[1]],
-          b_sex_med = fixef(model)[, 1][[2]],
-          b_cond_med = fixef(model)[, 1][[3]],
-          b_sex_cond_med = fixef(model)[, 1][[4]],
-          b_base_lower = fixef(model)[, 3][[1]],
-          b_sex_lower = fixef(model)[, 3][[2]],
-          b_cond_lower = fixef(model)[, 3][[3]],
-          b_sex_cond_lower = fixef(model)[, 3][[4]],
-          b_base_upper = fixef(model)[, 4][[1]],
-          b_sex_upper = fixef(model)[, 4][[2]],
-          b_cond_upper = fixef(model)[, 4][[3]],
-          b_sex_cond_upper = fixef(model)[, 4][[4]],
-          b_base_error = fixef(model)[, 2][[1]],
-          b_sex_error = fixef(model)[, 2][[2]],
-          b_cond_error = fixef(model)[, 2][[3]],
-          b_sex_cond_error = fixef(model)[, 2][[4]]
-        )
+        tmp_results_df <- tmp_results_df %>%
+          mutate(
+            expt = experiment,
+            analysis_type = current_analysis_type,
+            pub_method = current_pub_method,
+            pub_true = ifelse(pb == 0, 0, 1),
+            posteriors_included = pp_n
+          )
 
         results_df <- rbind(results_df, tmp_results_df)
 
@@ -614,7 +448,7 @@ do_analyses <- function(
         this_chain_df <- as.data.frame(matrix(0, nrow = 1, ncol = 3))
         colnames(this_chain_df) <- colnames(chain_df)
 
-        # set initial prior for beta[4] and update afterwards (if not first round, update pp_u and pp_sig)
+        # set initial prior for b_sex_cond and update afterwards (if not first round, update pp_u and pp_sig)
         if (nrow(chain_df) == 0) {
           pp_u <- 0
           pp_sig <- 0.1
@@ -653,37 +487,24 @@ do_analyses <- function(
           }
         }
 
-        # update prior in prior_string
-        x <- paste("normal(", pp_u, ",", pp_sig, ")", sep = "")
-
-        # model formula
-        model_f <- bf(response ~ sex * condition + (1 | participant_id))
-
-        prior_m <- c(
-          prior(normal(0.5, 0.1), class = Intercept),
-          prior_string(x, class = "b", coef = "sex:condition"),
-          prior(normal(0, 0.1), class = b, coef = "sex"),
-          prior(normal(0, 0.1), class = b, coef = "condition"),
-          prior(normal(0, 0.1), class = sd),
-          prior(normal(0.5, 0.1), class = sigma)
-        )
-
-        model <- brm(
-          formula = model_f,
-          data = this_data_set,
-          family = gaussian,
-          prior = prior_m,
-          sample_prior = T,
-          chains = 2,
-          cores = 2
+        tmp_results_df <- run_model(
+          data_set = this_data_set,
+          pp_u = pp_u,
+          pp_sig = pp_sig
         )
 
         # publication
-        if (fixef(model)[, 1][[4]] > 0 & fixef(model)[, 3][[4]] > 0) {
+        if (
+          tmp_results_df$b_sex_cond_med > 0 &&
+            tmp_results_df$b_sex_cond_lower > 0
+        ) {
           pb_prob <- pb_prob_pos
-        } else if (fixef(model)[, 1][[4]] < 0 & fixef(model)[, 4][[4]] < 0) {
+        } else if (
+          tmp_results_df$b_sex_cond_med < 0 &&
+            tmp_results_df$b_sex_cond_upper < 0
+        ) {
           pb_prob <- pb_prob_neg
-        } else { # if ((fixef(model)[,1][[4]] >= 0 & fixef(model)[,3][[4]] <= 0) | (fixef(model)[,1][[4]] <= 0 & fixef(model)[,4][[4]] >= 0))
+        } else {
           pb_prob <- pb_prob_null
         }
 
@@ -692,8 +513,8 @@ do_analyses <- function(
         # if published
         if (pb == 1) {
           # new dataframe with saved PP values
-          this_chain_df$pp_u <- fixef(model)[, 1][[4]]
-          this_chain_df$pp_sig <- fixef(model)[, 2][[4]]
+          this_chain_df$pp_u <- tmp_results_df$b_sex_cond_med
+          this_chain_df$pp_sig <- tmp_results_df$b_sex_cond_error
           this_chain_df$studyID <- this_data_set$studyID[1]
 
           # binding into df with all PP values
@@ -701,29 +522,14 @@ do_analyses <- function(
         }
 
         # save the results of the pp
-        tmp_results_df <- dplyr::tibble(
-          expt = experiment,
-          analysis_type = current_analysis_type,
-          pub_method = current_pub_method,
-          pub_true = ifelse(pb == 0, 0, 1),
-          posteriors_included = pp_n,
-          b_base_med = fixef(model)[, 1][[1]],
-          b_sex_med = fixef(model)[, 1][[2]],
-          b_cond_med = fixef(model)[, 1][[3]],
-          b_sex_cond_med = fixef(model)[, 1][[4]],
-          b_base_lower = fixef(model)[, 3][[1]],
-          b_sex_lower = fixef(model)[, 3][[2]],
-          b_cond_lower = fixef(model)[, 3][[3]],
-          b_sex_cond_lower = fixef(model)[, 3][[4]],
-          b_base_upper = fixef(model)[, 4][[1]],
-          b_sex_upper = fixef(model)[, 4][[2]],
-          b_cond_upper = fixef(model)[, 4][[3]],
-          b_sex_cond_upper = fixef(model)[, 4][[4]],
-          b_base_error = fixef(model)[, 2][[1]],
-          b_sex_error = fixef(model)[, 2][[2]],
-          b_cond_error = fixef(model)[, 2][[3]],
-          b_sex_cond_error = fixef(model)[, 2][[4]]
-        )
+        tmp_results_df <- tmp_results_df %>%
+          mutate(
+            expt = experiment,
+            analysis_type = current_analysis_type,
+            pub_method = current_pub_method,
+            pub_true = ifelse(pb == 0, 0, 1),
+            posteriors_included = pp_n
+          )
 
         results_df <- rbind(results_df, tmp_results_df)
 
@@ -746,25 +552,56 @@ do_analyses <- function(
   return(results_df)
 } # end of do_analyses
 
-kalman <- function(mean, sd) {
-  for (i in 1:length(mean)) {
-    if (i == 2) {
-      k <- sd[1] / (sd[1] + sd[2]) # kalman gain
-      k_mean <- mean[1] + k * (mean[2] - mean[1]) # kalman mean
-      k_sd <- sd[1] - (k * sd[1]) # kalman sd
-    }
-    if (i > 2) {
-      k <- k_sd / (k_sd + sd[i])
-      k_mean <- k_mean + k * (mean[i] - k_mean)
-      k_sd <- k_sd - (k * k_sd)
-    }
-  }
 
-  return(data.frame(
-    mean = k_mean,
-    sd = k_sd
-  ))
+run_model <- function(data_set, pp_u, pp_sig) {
+  # model formula
+  model_f <- bf(response ~ sex * condition + (1 | participant_id))
+
+  # prior values
+  x <- paste("normal(", pp_u, ",", pp_sig, ")", sep = "")
+  prior_m <- c(
+    prior(normal(0.5, 0.1), class = Intercept),
+    prior_string(x, class = "b", coef = "sex:condition"),
+    prior(normal(0, 0.1), class = b, coef = "sex"),
+    prior(normal(0, 0.1), class = b, coef = "condition"),
+    prior(normal(0, 0.1), class = sd),
+    prior(normal(0.5, 0.1), class = sigma)
+  )
+
+  # run model
+  model <- brm(
+    formula = model_f,
+    data = data_set,
+    family = gaussian,
+    prior = prior_m,
+    sample_prior = T,
+    chains = 2,
+    cores = 2
+  )
+
+  # save the results of the analysis
+  model_results <- dplyr::tibble(
+    b_base_med = fixef(model)[, 1][[1]],
+    b_sex_med = fixef(model)[, 1][[2]],
+    b_cond_med = fixef(model)[, 1][[3]],
+    b_sex_cond_med = fixef(model)[, 1][[4]],
+    b_base_lower = fixef(model)[, 3][[1]],
+    b_sex_lower = fixef(model)[, 3][[2]],
+    b_cond_lower = fixef(model)[, 3][[3]],
+    b_sex_cond_lower = fixef(model)[, 3][[4]],
+    b_base_upper = fixef(model)[, 4][[1]],
+    b_sex_upper = fixef(model)[, 4][[2]],
+    b_cond_upper = fixef(model)[, 4][[3]],
+    b_sex_cond_upper = fixef(model)[, 4][[4]],
+    b_base_error = fixef(model)[, 2][[1]],
+    b_sex_error = fixef(model)[, 2][[2]],
+    b_cond_error = fixef(model)[, 2][[3]],
+    b_sex_cond_error = fixef(model)[, 2][[4]]
+  )
+
+  return(model_results)
 }
+
 
 running_meta_analysis <- function(meta_data) {
   # meta analysis without pb
@@ -796,4 +633,25 @@ running_meta_analysis <- function(meta_data) {
 
   # save all results
   return(meta_df)
+}
+
+
+kalman <- function(mean, sd) {
+  for (i in 1:length(mean)) {
+    if (i == 2) {
+      k <- sd[1] / (sd[1] + sd[2]) # kalman gain
+      k_mean <- mean[1] + k * (mean[2] - mean[1]) # kalman mean
+      k_sd <- sd[1] - (k * sd[1]) # kalman sd
+    }
+    if (i > 2) {
+      k <- k_sd / (k_sd + sd[i])
+      k_mean <- k_mean + k * (mean[i] - k_mean)
+      k_sd <- k_sd - (k * k_sd)
+    }
+  }
+
+  return(data.frame(
+    mean = k_mean,
+    sd = k_sd
+  ))
 }
