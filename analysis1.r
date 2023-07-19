@@ -90,8 +90,7 @@ do_analyses <- function(
 
     if (do_publication_bias == TRUE) {
       print(">>>>>>>>>>>> Doing posterior passing on linear chain (sym pb)")
-      # prep columns
-      # this function is in util.R
+      # name analysis
       current_analysis_type <- "pp_linear_pb_sym"
       current_pub_method <- "sym"
 
@@ -148,8 +147,7 @@ do_analyses <- function(
       } # end of p_linear_sym
 
       print(">>>>>>>>>>>> Doing posterior passing on linear chain (asym pb)")
-      # prep columns
-      # this function is in util.R
+      # name analysis
       current_analysis_type <- "pp_linear_pb_asym"
       current_pub_method <- "asym"
 
@@ -306,8 +304,7 @@ do_analyses <- function(
 
     if (do_publication_bias == TRUE) {
       print(">>>>>>>>>>>> Doing posterior passing on citation chain (pb sym)")
-      # prep columns
-      # this function is in util.R
+      # name analysis
       current_analysis_type <- "pp_citation_pb_sym"
       current_pub_method <- "sym"
 
@@ -411,8 +408,7 @@ do_analyses <- function(
       } # end of pp_citation_sym
 
       print(">>>>>>>>>>>> Doing posterior passing on citation chain (pb asym)")
-      # prep columns
-      # this function is in util.R
+      # name analysis
       current_analysis_type <- "pp_citation_pb_asym"
       current_pub_method <- "asym"
 
