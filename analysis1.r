@@ -5,7 +5,8 @@ do_analyses <- function(
     do_publication_bias,
     pb_prob_pos,
     pb_prob_neg,
-    pb_prob_null) {
+    pb_prob_null,
+    citation_chain) {
   print(">>>>>>>> Doing analyses")
 
   n_experiments_per_repeat <- max(data_sets$data_set)
