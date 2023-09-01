@@ -48,7 +48,7 @@ citation_list <- graph_from_data_frame(d = citation_list, directed = T)
 # Warning! n_participants_per_experiment and n_people need to
 # be divisible by 4!
 n_repeats <- 4
-n_experiments_per_repeat <- 60 
+n_experiments_per_repeat <- 60
 sample_n_participants_per_experiment <- T # if T, then draw a sample size from a poisson distribution, otherwise use the value of n_participants_per_experiment
 n_participants_per_experiment <- 40 # only used if sample_n_participants_per_experiment is F
 n_trials_per_participant <- 25
@@ -80,7 +80,7 @@ pb_prob_neg <- 0.6 # prob if b below zero and b upper below zero
 ### Posterior-passing parameters
 # These give you various options wrt posterior passing
 # log only the final experiment from each chain:
-pp_final_expt_only <- T
+pp_final_expt_only <- TRUE
 
 ### Vectors to store meta-data
 # This function is in util.R It creates a number of vectors that will be
@@ -168,19 +168,19 @@ for (i in 1:length(b_bases)) {
           # It is in these methods that we start to create the results table. Each entry
           # in this table corresponds to a single analysis on a single data_set.
           tmp_df <- do_analyses(data_sets, do_pp_linear, do_pp_citation, do_publication_bias) %>%
-              mutate(
-                repeat_id = rep,
-                true_base = b_bases[i],
-                true_sex = b_sexs[j],
-                true_cond = b_conds[k],
-                true_sex_cond = b_sex_conds[l],
-                var_pop = unique(population$var_base)
-              )
+            mutate(
+              repeat_id = rep,
+              true_base = b_bases[i],
+              true_sex = b_sexs[j],
+              true_cond = b_conds[k],
+              true_sex_cond = b_sex_conds[l],
+              var_pop = unique(population$var_base)
+            )
 
-          if (exists("analyses_df")) {
-            analyses_df <- rbind(analyses_df, tmp_df)
+          if (exists("saved_results")) {
+            saved_results <- rbind(saved_results, tmp_df)
           } else {
-            analyses_df <- tmp_df
+            saved_results <- tmp_df
           }
 
           ###
@@ -202,18 +202,21 @@ for (i in 1:length(b_bases)) {
         ### Create the Meta-results table
         ###
         # this function is in util.R
-        # now we have all our results so we parse them as a single table and collapse
-        # each repeat simulation (i.e. each run of experiments) into a single entry
-        save_results_meta()
+        # each entry in this table corresponds to a single repeat with unique
+        # beta values for base, sex, cond, and sex_cond
+        results_df <- saved_results %>%
+          filter(
+            true_base == b_bases[i] &
+              true_sex == b_sexs[j] &
+              true_cond == c_conds[k] &
+              true_sex_conds == b_sex_conds[l]
+          )
+        tmp_meta_results <- save_results_meta(results_df, pp_final_expt_only)
 
-        ###
-        ### Save results for each value of b_sex_conds
-        ###
-        if (exists("saved_results_final")) {
-          saved_results_final <- rbind(saved_results, saved_results_final)
-          print("YES")
+        if (exists("saved_meta_results")) {
+          saved_meta_results <- rbind(saved_meta_results, tmp_meta_results)
         } else {
-          saved_results_final <- saved_results
+          saved_meta_results <- tmp_meta_results
         }
       }
     }
@@ -224,10 +227,4 @@ for (i in 1:length(b_bases)) {
 meta_results <- compile_meta_results()
 
 write.csv(saved_results_final, "Results/saved_results.csv")
-write.csv(meta_results, "Results/meta_results.csv")
-
-tidy_workspace()
-
-
-
-
+write.csv(saved_meta_results, "Results/meta_results.csv")
