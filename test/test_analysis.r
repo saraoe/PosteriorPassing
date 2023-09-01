@@ -1,8 +1,8 @@
 ### Testing functions in analysis.r ###
 library(pacman)
 pacman::p_load(brms, dplyr, boot, igraph, tidyverse)
-source("analysis1.r")
-source("util1.r")
+source("analysis.r")
+source("util.r")
 
 data_sets <- read_csv("test/test_data_sets.csv") %>%
     filter(
@@ -20,8 +20,8 @@ citation_chain <- read_csv("test/test_citation_chain.csv")
 
 analysis_df <- do_analyses(
     data_sets = data_sets,
-    do_pp_linear = FALSE,
-    do_pp_citation = TRUE,
+    do_pp_linear = TRUE,
+    do_pp_citation = FALSE,
     do_publication_bias = FALSE,
     pb_prob_pos = pb_prob_pos,
     pb_prob_neg = pb_prob_neg,
