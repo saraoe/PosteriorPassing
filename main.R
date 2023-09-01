@@ -1,6 +1,7 @@
+#!/usr/bin/env Rscript
 # imports
 library(pacman)
-pacman::p_load(brms, dplyr, boot, igraph, tidyverse)
+pacman::p_load(tidyverse, brms, dplyr, boot, igraph)
 source("util1.r")
 source("simulation.R")
 source("analysis1.r")
@@ -47,8 +48,9 @@ citation_list <- graph_from_data_frame(d = citation_list, directed = T)
 # Warning! n_participants_per_experiment and n_people need to
 # be divisible by 4!
 n_repeats <- 4
-n_experiments_per_repeat <- 60
-n_participants_per_experiment <- 80
+n_experiments_per_repeat <- 60 
+sample_n_participants_per_experiment <- T # if T, then draw a sample size from a poisson distribution, otherwise use the value of n_participants_per_experiment
+n_participants_per_experiment <- 40 # only used if sample_n_participants_per_experiment is F
 n_trials_per_participant <- 25
 n_people <- 100000
 
@@ -133,6 +135,19 @@ for (i in 1:length(b_bases)) {
           ###
           citation_chain <- create_citation_chain(citation_list)
 
+
+          ###
+          ### Draw sample size ###
+          ###
+          # If sample_n_participants_per_experiment is T, the
+          # sample size will be drawn from a poisson distribution.
+          # Otherwise, the value of n_participants_per_experiment
+          # is used.
+          if (sample_n_participants_per_experiment == T) {
+            n_participants_per_experiment <- rpois(1, lambda = 10) * 4 # multiply by 4 to make sure it's divisible by 4
+          }
+
+
           ###
           ### Create the datasets for each experiment ###
           ###
@@ -171,12 +186,12 @@ for (i in 1:length(b_bases)) {
           ### Remove DLLs #
           ###
           # Code from https://github.com/stan-dev/rstan/issues/448
-          loaded_dlls = getLoadedDLLs()
-          loaded_dlls = loaded_dlls[str_detect(names(loaded_dlls), '^file')]
+          loaded_dlls <- getLoadedDLLs()
+          loaded_dlls <- loaded_dlls[str_detect(names(loaded_dlls), "^file")]
           if (length(loaded_dlls) > 10) {
             for (dll in head(loaded_dlls, -10)) {
-              message("Unloading DLL ", dll[['name']], ": ", dll[['path']])
-              dyn.unload(dll[['path']])
+              message("Unloading DLL ", dll[["name"]], ": ", dll[["path"]])
+              dyn.unload(dll[["path"]])
             }
           }
           message("DLL Count = ", length(getLoadedDLLs()), ": [", str_c(names(loaded_dlls), collapse = ","), "]")
@@ -193,23 +208,25 @@ for (i in 1:length(b_bases)) {
         ###
         ### Save results for each value of b_sex_conds
         ###
-        if(exists("saved_results_final")){
+        if (exists("saved_results_final")) {
           saved_results_final <- rbind(saved_results, saved_results_final)
           print("YES")
         } else {
           saved_results_final <- saved_results
         }
-        }
       }
     }
-
+  }
 } # end of parameter value for loops
 
 # save results
 meta_results <- compile_meta_results()
 
-saved <- paste("Results/saved_results_", number, ".csv", sep = "")
 write.csv(saved_results_final, "Results/saved_results.csv")
 write.csv(meta_results, "Results/meta_results.csv")
 
 tidy_workspace()
+
+
+
+
