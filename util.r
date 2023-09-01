@@ -138,52 +138,6 @@ prepare_meta_vectors <- function() {
   meta_sex_cond_uncertainty_pp_c_pb_asym <<- vector()
 }
 
-prepare_data_vectors <- function() {
-  repeat_id <<- vector()
-  expt <<- vector()
-  analysis_type <<- vector()
-  true_base <<- vector()
-  b_base_lower <<- vector()
-  b_base_med <<- vector()
-  b_base_upper <<- vector()
-  b_base_error <<- vector()
-  true_sex <<- vector()
-  b_sex_p_value <<- vector()
-  b_sex_lower <<- vector()
-  b_sex_med <<- vector()
-  b_sex_upper <<- vector()
-  b_sex_error <<- vector()
-  true_cond <<- vector()
-  b_cond_p_value <<- vector()
-  b_cond_lower <<- vector()
-  b_cond_med <<- vector()
-  b_cond_upper <<- vector()
-  b_cond_error <<- vector()
-  true_sex_cond <<- vector()
-  b_sex_cond_p_value <<- vector()
-  b_sex_cond_lower <<- vector()
-  b_sex_cond_med <<- vector()
-  b_sex_cond_upper <<- vector()
-  b_sex_cond_error <<- vector()
-  pub_true <<- vector()
-  pub_method <<- vector()
-  pp_n <<- vector()
-  var_pop <<- vector()
-  sample_size <<- vector() ########################################################### FRIDA
-}
-
-save_analysis_results_1 <- function(type) {
-  repeat_id <<- c(repeat_id, rep(rep, n_experiments_per_repeat))
-  expt <<- c(expt, c(1:n_experiments_per_repeat))
-  true_base <<- c(true_base, rep(b_base, n_experiments_per_repeat))
-  true_sex <<- c(true_sex, rep(b_sex, n_experiments_per_repeat))
-  true_cond <<- c(true_cond, rep(b_cond, n_experiments_per_repeat))
-  true_sex_cond <<- c(true_sex_cond, rep(b_sex_cond, n_experiments_per_repeat))
-  analysis_type <<- c(analysis_type, rep(type, n_experiments_per_repeat))
-  var_pop <<- c(var_pop, rep(population$var_base[1], n_experiments_per_repeat))
-  sample_size <<- c(sample_size, rep(n_participants_per_experiment, n_experiments_per_repeat)) ########################################################### FRIDA
-}
-
 save_results_meta <- function() {
   print(">>>>>>>> Saving results")
   # combine results into a data frame
