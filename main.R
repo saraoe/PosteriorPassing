@@ -209,8 +209,8 @@ for (i in 1:length(b_bases)) {
 # save results
 meta_results <- compile_meta_results()
 
-# saved <- paste("Results_testing/saved_results_", number, ".csv", sep = "")
-write.csv(saved_results_final, "Results_testing/saved_results.csv")
-write.csv(meta_results, "Results_testing/meta_results.csv")
+# saved <- paste("Results/saved_results_", number, ".csv", sep = "")
+write.csv(saved_results_final, "Results/saved_results.csv")
+write.csv(meta_results, "Results/meta_results.csv")
 
 tidy_workspace()
