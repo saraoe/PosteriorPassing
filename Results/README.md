@@ -6,6 +6,7 @@ Columns in *saved_results.csv*:
 - **true_sex** (*numeric*): True main effect of sex
 - **true_cond** (*numeric*): True main effect of condition
 - **true_sex_cond** (*numeric*): True interation effect between sex and condition
+- **var_pop** (*numeric*): variation in population (drawn from a gamma distribution)
 - **expt** (*numeric*): experiment number in the current repeat
 - **analysis_type** (*character*): type of analysis, e.g. "pp_citation_pb_sym" refers to citation chain with symmetrical publication bias. 
 - **pub_method** (*character*): Whether asymmetrical or symmetrical publication bias was used in the simulation, indicated by "asym" and "sym"

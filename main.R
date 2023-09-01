@@ -173,7 +173,8 @@ for (i in 1:length(b_bases)) {
                 true_base = b_bases[i],
                 true_sex = b_sexs[j],
                 true_cond = b_conds[k],
-                true_sex_cond = b_sex_conds[l]
+                true_sex_cond = b_sex_conds[l],
+                var_pop = unique(population$var_base)
               )
 
           if (exists("analyses_df")) {
