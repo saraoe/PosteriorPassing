@@ -2,9 +2,9 @@
 # imports
 library(pacman)
 pacman::p_load(tidyverse, brms, dplyr, boot, igraph)
-source("util1.r")
+source("util.r")
 source("simulation.R")
-source("analysis1.r")
+source("analysis.r")
 
 ###       ###
 ### SETUP ###
