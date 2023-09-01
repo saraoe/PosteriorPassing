@@ -26,7 +26,7 @@ source("analysis1.r")
 b_bases <- c(0)
 b_sexs <- c(0)
 b_conds <- c(0)
-b_sex_conds <- c((-2), 1) # c((-2), (-1), 0, 1, 2)
+b_sex_conds <- c((-2), (-1), 0, 1, 2)
 
 var_shape <- 5
 var_scale <- 0.1
@@ -47,11 +47,11 @@ citation_list <- graph_from_data_frame(d = citation_list, directed = T)
 # parameter values given in the "True values" section above.
 # Warning! n_participants_per_experiment and n_people need to
 # be divisible by 4!
-n_repeats <- 2 # 4
-n_experiments_per_repeat <- 60 # 60
+n_repeats <- 4
+n_experiments_per_repeat <- 60 
 sample_n_participants_per_experiment <- T # if T, then draw a sample size from a poisson distribution, otherwise use the value of n_participants_per_experiment
 n_participants_per_experiment <- 40 # only used if sample_n_participants_per_experiment is F
-n_trials_per_participant <- 10 # 25
+n_trials_per_participant <- 25
 n_people <- 100000
 
 total_simulations <- length(b_bases) * length(b_sexs) * length(b_conds) * length(b_sex_conds) * n_repeats
@@ -59,8 +59,8 @@ current_simulation <- 1
 
 ### Analysis parameters
 # These allow you to choose which analyses do you want
-do_pp_linear <- T
-do_pp_citation <- F
+do_pp_linear <- TRUE
+do_pp_citation <- TRUE
 
 ### Publication bias
 # This allows you to choose whether or not the analysis
@@ -70,7 +70,7 @@ do_pp_citation <- F
 # of effect and whether or not CIs include 0. This also allows
 # you do decide whether you want the publication bias to be
 # symmetric or asymmetric.
-do_publication_bias <- F
+do_publication_bias <- TRUE
 
 pb_prob_pos <- 0.9 # prob if b above zero and b lower above zero
 pb_prob_null <- 0.2 # prob if b above zero and b lower below zero OR b below zero and b upper above zero
@@ -167,7 +167,20 @@ for (i in 1:length(b_bases)) {
           # Now that we have all the data_sets we perform the desired analyses over them.
           # It is in these methods that we start to create the results table. Each entry
           # in this table corresponds to a single analysis on a single data_set.
-          do_analyses_1()
+          tmp_df <- do_analyses(data_sets, do_pp_linear, do_pp_citation, do_publication_bias) %>%
+              mutate(
+                repeat_id = rep,
+                true_base = b_bases[i],
+                true_sex = b_sexs[j],
+                true_cond = b_conds[k],
+                true_sex_cond = b_sex_conds[l]
+              )
+
+          if (exists("analyses_df")) {
+            analyses_df <- rbind(analyses_df, tmp_df)
+          } else {
+            analyses_df <- tmp_df
+          }
 
           ###
           ### Remove DLLs #
@@ -209,8 +222,11 @@ for (i in 1:length(b_bases)) {
 # save results
 meta_results <- compile_meta_results()
 
-# saved <- paste("Results/saved_results_", number, ".csv", sep = "")
 write.csv(saved_results_final, "Results/saved_results.csv")
 write.csv(meta_results, "Results/meta_results.csv")
 
 tidy_workspace()
+
+
+
+
