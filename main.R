@@ -82,14 +82,6 @@ pb_prob_neg <- 0.6 # prob if b below zero and b upper below zero
 # log only the final experiment from each chain:
 pp_final_expt_only <- TRUE
 
-### Vectors to store meta-data
-# This function is in util.R It creates a number of vectors that will be
-# filled with data. Each set of simulations for a set of parameters
-# creates a results table. At the end of each set of parameter values,
-# the meta_results table is filled in with a single row that gives data
-# on the results across those simulations.
-prepare_meta_vectors()
-
 ###                        ###
 ### SIMULATIONS START HERE ###
 ###                        ###
