@@ -87,20 +87,17 @@ pp_final_expt_only <- TRUE
 ###                        ###
 
 ### For loops to iterate through parameter values
-for (i in 1:length(b_bases)) {
-  for (j in 1:length(b_sexs)) {
-    for (k in 1:length(b_conds)) {
-      for (l in 1:length(b_sex_conds)) {
-        ### Set up values for the simulation
-        # this function is in util.R
-        # also save the values to the meta vectors
-        prepare_for_simulation()
-
-        ### Vectors to store data
-        # this function is in util.R
-        # These store the results of simulations within each set
-        # of parameter values
-        prepare_data_vectors()
+for (b_base in b_bases) {
+  for (b_sex in b_sexs) {
+    for (b_cond in b_conds) {
+      for (b_sex_cond in b_sex_conds) {
+        ### Begin simulation with specific beta values
+        print(paste("running simulation with parameters: b_base: ", b_base,
+          ", b_sex: ", b_sex,
+          ", b_cond: ", b_cond,
+          ", b_sex_cond: ", b_sex_cond,
+          sep = " "
+        ))
 
         ###
         ### Each repeat starts here

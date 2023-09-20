@@ -191,23 +191,6 @@ compile_meta_results <- function() {
   ))
 }
 
-prepare_for_simulation <- function() {
-  b_base <<- b_bases[i]
-  b_sex <<- b_sexs[j]
-  b_cond <<- b_conds[k]
-  b_sex_cond <<- b_sex_conds[l]
-  meta_true_base <<- c(meta_true_base, rep(b_base, n_repeats))
-  meta_true_sex <<- c(meta_true_sex, rep(b_sex, n_repeats))
-  meta_true_cond <<- c(meta_true_cond, rep(b_cond, n_repeats))
-  meta_true_sex_cond <<- c(meta_true_sex_cond, rep(b_sex_cond, n_repeats))
-  print(paste("running simulation with parameters: b_base: ", b_base,
-    ", b_sex: ", b_sex,
-    ", b_cond: ", b_cond,
-    ", b_sex_cond: ", b_sex_cond,
-    sep = " "
-  ))
-}
-
 
 tidy_chain <- function(edges, edge) {
   new_edge <- edge
