@@ -151,7 +151,11 @@ for (b_base in b_bases) {
             population,
             n_people,
             n_participants_per_experiment,
-            n_trials_per_participant
+            n_trials_per_participant,
+            b_base,
+            b_sex,
+            b_cond,
+            b_sex_cond
           )
 
           ###
@@ -164,10 +168,10 @@ for (b_base in b_bases) {
           tmp_df <- do_analyses(data_sets, do_pp_linear, do_pp_citation, do_publication_bias) %>%
             mutate(
               repeat_id = rep,
-              true_base = b_bases[i],
-              true_sex = b_sexs[j],
-              true_cond = b_conds[k],
-              true_sex_cond = b_sex_conds[l],
+              true_base = b_base,
+              true_sex = b_sex,
+              true_cond = b_cond,
+              true_sex_cond = b_sex_cond,
               var_pop = unique(population$var_base)
             )
 
