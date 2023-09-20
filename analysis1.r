@@ -114,7 +114,7 @@ do_analyses <- function(
           lower = tmp_results_df$b_sex_cond_lower,
           upper = tmp_results_df$b_sex_cond_lower,
           pb_prob_pos = pb_prob_pos,
-          pb_prob_pos = pb_prob_pos,
+          pb_prob_neg = pb_prob_pos,
           pb_prob_null = pb_prob_null
         )
 
@@ -171,7 +171,7 @@ do_analyses <- function(
           lower = tmp_results_df$b_sex_cond_lower,
           upper = tmp_results_df$b_sex_cond_lower,
           pb_prob_pos = pb_prob_pos,
-          pb_prob_pos = pb_prob_neg,
+          pb_prob_neg = pb_prob_neg,
           pb_prob_null = pb_prob_null
         )
 
@@ -373,7 +373,7 @@ do_analyses <- function(
           lower = tmp_results_df$b_sex_cond_lower,
           upper = tmp_results_df$b_sex_cond_lower,
           pb_prob_pos = pb_prob_pos,
-          pb_prob_pos = pb_prob_pos,
+          pb_prob_neg = pb_prob_pos,
           pb_prob_null = pb_prob_null
         )
 
@@ -477,7 +477,7 @@ do_analyses <- function(
           lower = tmp_results_df$b_sex_cond_lower,
           upper = tmp_results_df$b_sex_cond_lower,
           pb_prob_pos = pb_prob_pos,
-          pb_prob_pos = pb_prob_neg,
+          pb_prob_neg = pb_prob_neg,
           pb_prob_null = pb_prob_null
         )
 
@@ -575,32 +575,43 @@ run_model <- function(data_set, pp_u, pp_sig) {
 
 
 running_meta_analysis <- function(meta_data) {
-  # meta analysis without pb
-  meta_f <- bf(b_sex_cond_med | se(b_sex_cond_error) ~ 1 + (1 | expt))
+  if (nrow(meta_data) == 0) { # if no studies were published
 
-  prior_meta <- c(
-    prior(normal(0, 0.1), class = Intercept),
-    prior(normal(0, 0.1), class = sd)
-  )
+    meta_df <- dplyr::tibble(
+      b_sex_cond_meta = NA,
+      b_sex_cond_error_meta = NA,
+      b_sex_cond_lower_meta = NA,
+      b_sex_cond_upper_meta = NA,
+      meta_n_exp = nrow(meta_data)
+    )
+  } else {
+    # meta analysis without pb
+    meta_f <- bf(b_sex_cond_med | se(b_sex_cond_error) ~ 1 + (1 | expt))
 
-  model <- brm(
-    formula = meta_f,
-    data = meta_data,
-    family = gaussian,
-    prior = prior_meta,
-    sample_prior = T,
-    chains = 2,
-    cores = 2
-  )
+    prior_meta <- c(
+      prior(normal(0, 0.1), class = Intercept),
+      prior(normal(0, 0.1), class = sd)
+    )
 
-  # save results
-  meta_df <- dplyr::tibble(
-    b_sex_cond_meta = fixef(model)[, 1][[1]],
-    b_sex_cond_error_meta = fixef(model)[, 2][[1]],
-    b_sex_cond_lower_meta = fixef(model)[, 3][[1]],
-    b_sex_cond_upper_meta = fixef(model)[, 4][[1]],
-    meta_n_exp = nrow(meta_data)
-  )
+    model <- brm(
+      formula = meta_f,
+      data = meta_data,
+      family = gaussian,
+      prior = prior_meta,
+      sample_prior = T,
+      chains = 2,
+      cores = 2
+    )
+
+    # save results
+    meta_df <- dplyr::tibble(
+      b_sex_cond_meta = fixef(model)[, 1][[1]],
+      b_sex_cond_error_meta = fixef(model)[, 2][[1]],
+      b_sex_cond_lower_meta = fixef(model)[, 3][[1]],
+      b_sex_cond_upper_meta = fixef(model)[, 4][[1]],
+      meta_n_exp = nrow(meta_data)
+    )
+  }
 
   # save all results
   return(meta_df)
