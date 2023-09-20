@@ -35,5 +35,6 @@ analysis_df <- analysis_df %>%
         true_base = 0,
         true_sex = 0,
         true_cond = 0,
-        true_sex_cond = 1
+        true_sex_cond = 1,
+        var_pop = .5
     )
