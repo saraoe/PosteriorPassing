@@ -13,7 +13,11 @@ create_datasets <- function(
     population,
     n_people,
     n_participants_per_experiment,
-    n_trials_per_participant) {
+    n_trials_per_participant,
+    b_base,
+    b_sex,
+    b_cond,
+    b_sex_cond) {
   print(">>>>>>>> Creating data sets")
 
   data_set <- vector()
