@@ -226,5 +226,5 @@ for (i in 1:length(b_bases)) {
 # save results
 meta_results <- compile_meta_results()
 
-write.csv(saved_results_final, "Results/saved_results.csv")
-write.csv(saved_meta_results, "Results/meta_results.csv")
+write.csv(saved_results, "results/saved_results.csv")
+write.csv(saved_meta_results, "results/meta_results.csv")
