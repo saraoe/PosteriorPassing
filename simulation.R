@@ -1,4 +1,4 @@
-create_population <- function() {
+create_population <- function(n_people, var_shape, var_scale) {
   print(">>>> Creating population")
 
   id <- c(1:n_people)
@@ -9,7 +9,11 @@ create_population <- function() {
   return(data.frame(id, sex, d_base, var_base))
 }
 
-create_datasets <- function() {
+create_datasets <- function(
+    population,
+    n_people,
+    n_participants_per_experiment,
+    n_trials_per_participant) {
   print(">>>>>>>> Creating data sets")
 
   data_set <- vector()
@@ -20,7 +24,6 @@ create_datasets <- function() {
   studyID <- vector()
 
   for (experiment in 1:n_experiments_per_repeat) {
-
     # add to the data_set, participant_id and sex columns
     data_set <- c(data_set, rep(experiment, n_participants_per_experiment))
     participant_id <- c(participant_id, c(1:n_participants_per_experiment))
@@ -40,8 +43,8 @@ create_datasets <- function() {
     # get the data from each participant
     temp_response <- vector()
     for (ppt in 1:n_participants_per_experiment) {
-      lp <- b_base + participants$d_base[ppt] + b_sex*participants$sex[ppt] + b_cond*temp_condition[ppt] + b_sex_cond*participants$sex[ppt]*temp_condition[ppt]
-      prob <- exp(lp)/(1+exp(lp))
+      lp <- b_base + participants$d_base[ppt] + b_sex * participants$sex[ppt] + b_cond * temp_condition[ppt] + b_sex_cond * participants$sex[ppt] * temp_condition[ppt]
+      prob <- exp(lp) / (1 + exp(lp))
       temp_response[ppt] <- mean(runif(n_trials_per_participant, 0, 1) < prob)
     }
     response <- c(response, temp_response)

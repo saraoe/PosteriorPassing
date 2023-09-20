@@ -117,7 +117,7 @@ for (b_base in b_bases) {
           # It is created with the "doppelganger quadrangle" method
           # so there are equal number of men and women and the true
           # mean and true variance of each sub population is the same
-          population <- create_population()
+          population <- create_population(n_people, var_shape, var_scale)
 
           ###
           ### Create citation chain
@@ -147,7 +147,12 @@ for (b_base in b_bases) {
           # sex - the sex of the participant
           # condition - the condition the participant was in
           # response - the mean response of that participant, ranging from 0 to 1
-          data_sets <- create_datasets()
+          data_sets <- create_datasets(
+            population,
+            n_people,
+            n_participants_per_experiment,
+            n_trials_per_participant
+          )
 
           ###
           ### run analyses ###
